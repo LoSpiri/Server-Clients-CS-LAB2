@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
   e = writen(fd_skt,&s,sizeof(s));
   if(e!=sizeof(s)) termina("Errore writen");
 
-  printf("Ho oltrepassato fine\n");
+  // printf("Ho oltrepassato fine\n");
 
   if(close(fd_skt)<0) perror("Errore chiusura socket");
 
