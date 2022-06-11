@@ -9,23 +9,6 @@
 
 //farm 101077744 z0.dat z1.dat 12-7803886 -n 7 -q 2 -t 100
 
-/* Read "n" bytes from a descriptor */
-ssize_t readn(int fd, void *ptr, size_t n) {  
-   size_t   nleft;
-   ssize_t  nread;
- 
-   nleft = n;
-   while (nleft > 0) {
-     if((nread = read(fd, ptr, nleft)) < 0) {
-        if (nleft == n) return -1; /* error, return -1 */
-        else break; /* error, return amount read so far */
-     } else if (nread == 0) break; /* EOF */
-     nleft -= nread;
-     ptr   += nread;
-   }
-   return(n - nleft); /* return >= 0 */
-}
-
 /* Write "n" bytes to a descriptor */
 ssize_t writen(int fd, void *ptr, size_t n) {  
    size_t   nleft;
@@ -65,15 +48,13 @@ void *tbody(void *arg)
     xsem_wait(a->sem_data_items,QUI);
 		xpthread_mutex_lock(a->cmutex,QUI);
     str = a->buffer[*(a->cindex) % *(a->qlen)];
-		//printf("%s-%d\n",str,*(a->cindex));
     *(a->cindex) += 1;
 		xpthread_mutex_unlock(a->cmutex,QUI);
     xsem_post(a->sem_free_slots,QUI);
 
-		//sleep(1);
 		if(strcmp(str,"fine")==0) break;
 		
-		//apro file, leggo numeri e sommo
+		// apro file, leggo numeri e sommo
 		FILE *f = xfopen(str, "rb", QUI);
 
 		int cont = 0;
@@ -86,7 +67,7 @@ void *tbody(void *arg)
 		fclose(f);
 
 		// invio tramite socket somma e str
-		int fd_skt = 0;      // file descriptor associato al socket
+		int fd_skt = 0;  // file descriptor associato al socket
 	  struct sockaddr_in serv_addr;
 	  size_t e;
 		// crea socket
@@ -101,7 +82,7 @@ void *tbody(void *arg)
 		if (connect(fd_skt, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
     	termina("Errore apertura connessione");
 		}
-		// qui aggiungo la logica
+    // qui aggiungo la logica
 		char s[256];
 		sprintf(s, "%lld", somma);
 		strcat(s," ");
@@ -118,7 +99,7 @@ void *tbody(void *arg)
   pthread_exit(NULL); 
 }     
 
-// thread che effettua la gestione di tutti i segnali
+// thread che effettua la gestione di sigint
 void *tgestore(void *v) {
 	flag *b = (flag *)v; 
   sigset_t mask;
@@ -148,7 +129,7 @@ int main(int argc, char *argv[]) {
 	sigaddset(&mask,SIGINT);
 	pthread_sigmask(SIG_BLOCK,&mask,NULL); // blocco sigint
 
-	//parso caratteri opzionali e riordino argv coi restanti
+	//parso caratteri opzionali 
 	int nthread = 4;
 	int qlen = 8;
 	int delay = 0;
@@ -208,7 +189,7 @@ int main(int argc, char *argv[]) {
     if(flag == 0) break;
     xsem_wait(&sem_free_slots,__LINE__,__FILE__);
     buffer[pindex++ % qlen] = argv[optind];
-		usleep(delay*100000);
+		usleep(delay);
     xsem_post(&sem_data_items,__LINE__,__FILE__);
   }
 
