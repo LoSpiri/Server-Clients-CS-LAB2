@@ -26,9 +26,13 @@ class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     
 def main(host=HOST,port=PORT):
   with ThreadedTCPServer((host, port), Printa) as server:
-    # print('In attesa dei client')
-    server.serve_forever()
+    try:
+      # print('In attesa dei client')
+      server.serve_forever()
+    except KeyboardInterrupt:
+      pass
     # print('Chiuso il server')
+    server.shutdown()
 
 
 if len(sys.argv)==1:

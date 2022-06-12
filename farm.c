@@ -55,46 +55,49 @@ void *tbody(void *arg)
 		if(strcmp(str,"fine")==0) break;
 		
 		// apro file, leggo numeri e sommo
-		FILE *f = xfopen(str, "rb", QUI);
+		FILE *f = fopen(str, "rb");
+    if(f==NULL){
+      printf("Non esiste file: %s\n",str);
+  	}
+    else{
+      int cont = 0;
+      long num;
+      long long somma = 0;
+      while(fread(&num, sizeof(long long), 1, f) == 1) {
+        somma += num*cont;
+        cont++;
+      }
+      fclose(f);
 
-		int cont = 0;
-		long num;
-		long long somma = 0;
-	  while(fread(&num, sizeof(long long), 1, f) == 1) {
-			somma += num*cont;
-			cont++;
-	  }
-		fclose(f);
+      // invio tramite socket somma e str
+      int fd_skt = 0;  // file descriptor associato al socket
+      struct sockaddr_in serv_addr;
+      size_t e;
+      // crea socket
+      if ((fd_skt = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+        termina("Errore creazione socket");
+      // assegna indirizzo
+      serv_addr.sin_family = AF_INET;
+      // il numero della porta deve essere convertito 
+      // in network order 
+      serv_addr.sin_port = htons(PORT);
+      serv_addr.sin_addr.s_addr = inet_addr(HOST);
+      if (connect(fd_skt, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
+        termina("Errore apertura connessione");
+      }
+      // qui aggiungo la logica
+      char s[256];
+      sprintf(s, "%lld", somma);
+      strcat(s," ");
+      strcat(s,str);
+      int len = sizeof(s);
+      e = writen(fd_skt,&len,sizeof(len));
+      if(e!=sizeof(int)) termina("Errore writen");    
+      e = writen(fd_skt,&s,sizeof(s));
+      if(e!=sizeof(s)) termina("Errore writen");
 
-		// invio tramite socket somma e str
-		int fd_skt = 0;  // file descriptor associato al socket
-	  struct sockaddr_in serv_addr;
-	  size_t e;
-		// crea socket
-	  if ((fd_skt = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
-	    termina("Errore creazione socket");
-	  // assegna indirizzo
-	  serv_addr.sin_family = AF_INET;
-	  // il numero della porta deve essere convertito 
-	  // in network order 
-	  serv_addr.sin_port = htons(PORT);
-	  serv_addr.sin_addr.s_addr = inet_addr(HOST);
-		if (connect(fd_skt, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
-    	termina("Errore apertura connessione");
-		}
-    // qui aggiungo la logica
-		char s[256];
-		sprintf(s, "%lld", somma);
-		strcat(s," ");
-		strcat(s,str);
-    int len = sizeof(s);
-    e = writen(fd_skt,&len,sizeof(len));
-	  if(e!=sizeof(int)) termina("Errore writen");    
-	  e = writen(fd_skt,&s,sizeof(s));
-	  if(e!=sizeof(s)) termina("Errore writen");
-
-    if(close(fd_skt)<0) perror("Errore chiusura socket");
-
+      if(close(fd_skt)<0) perror("Errore chiusura socket");
+    }
   } while(true);
   pthread_exit(NULL); 
 }     
