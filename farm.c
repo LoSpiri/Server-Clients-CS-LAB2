@@ -105,7 +105,7 @@ void *tbody(void *arg)
       sprintf(s, "%lld", somma);
       strcat(s, " ");
       strcat(s, str);
-      int len = sizeof(s);
+      int len = strlen(s);
       e = writen(fd_skt, &len, sizeof(len));
       if (e != sizeof(int))
         termina("Errore writen");
